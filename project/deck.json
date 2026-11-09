@@ -1,0 +1,27 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-11-08T09:00:00Z"},
+  "lists": "css",
+  "title": "Beyond Coding: Thriving in the AI Era",
+  "cover": "cover",
+  "order": [
+    "cover", "hook", "roadmap",
+    "act1", "evolution", "shift", "role",
+    "act2", "usecases", "prompting", "limits", "statement", "verify", "responsible", "decide",
+    "act3", "skills", "fundamentals", "learn", "portfolio", "writeup", "trends", "opportunities", "plan",
+    "takeaways", "qa"
+  ],
+  "sections": {
+    "open": {"description": "Opening: a question that frames the talk, and the roadmap.", "start": "cover"},
+    "change": {"description": "Change: how AI is reshaping software work and the developer’s role.", "start": "act1"},
+    "work": {"description": "Work: using AI well, checking its output, and using it responsibly.", "start": "act2"},
+    "grow": {"description": "Grow: the skills, portfolio, and learning habits for a career in the AI era.", "start": "act3"},
+    "close": {"description": "Close: key takeaways, the answer to the opening question, and Q&A.", "start": "takeaways"}
+  },
+  "faces": {
+    "space-grotesk": {"family": "Space Grotesk", "href": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"},
+    "inter": {"family": "Inter", "href": "https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap"},
+    "jetbrains-mono": {"family": "JetBrains Mono", "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..700&display=swap"}
+  },
+  "designSystems": []
+}

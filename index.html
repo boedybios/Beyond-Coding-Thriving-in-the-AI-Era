@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beyond Coding: Thriving in the AI Era</title>
+<!--
+  Local viewer for the Claude Slides deck in project/.
+  Run from this folder:  python3 -m http.server 8000
+  Then open:             http://localhost:8000
+
+  Keys: → / Space / PageDown next · ← / PageUp back · Home / End
+        F full screen · N speaker notes · P presenter view · ? help
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #e8e8e8; overflow: hidden;
+    font-family: Inter, -apple-system, "Segoe UI", Arial, sans-serif; }
+  body.idle { cursor: none; }
+
+  /* A host scales a fixed 1920×1080 stage to fit itself. */
+  .stage-host { position: relative; overflow: hidden; min-width: 0; }
+  .stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center center; }
+  .slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility .3s; }
+  .slide.active { opacity: 1; visibility: visible; }
+
+  /* Baseline for the Slides format: no margins, sizes and colors come from inline styles. */
+  .slide section { position: relative; width: 1920px; height: 1080px; box-sizing: border-box; overflow: hidden; }
+  .slide section * { box-sizing: border-box; }
+  .slide :is(h1, h2, h3, p, ul, ol, table, hr) { margin: 0; }
+  .slide :is(h1, h2, h3) { font-weight: inherit; }
+  .slide :is(ul, ol) { padding-left: 1.2em; }
+  .slide table { border-collapse: separate; border-spacing: 0; width: 100%; overflow: hidden; }
+  .slide hr { border: 0; height: 0; width: 100%; }
+  .slide b { font-weight: 700; }
+  .slide x-shape { display: block; }
+  .slide x-shape[kind="arrow-right"] { clip-path: polygon(0 30%, 55% 30%, 55% 0, 100% 50%, 55% 100%, 55% 70%, 0 70%); }
+  .slide x-shape[kind="arrow-left"] { clip-path: polygon(100% 30%, 45% 30%, 45% 0, 0 50%, 45% 100%, 45% 70%, 100% 70%); }
+  .slide x-shape[kind="ellipse"] { border-radius: 50%; }
+  .slide x-shape[kind="rounded"] { border-radius: 16px; }
+  .slide x-icon { display: inline-block; }
+  .slide x-icon svg { display: block; width: 100%; height: 100%; }
+
+  /* Audience view */
+  #main { position: fixed; inset: 0; }
+  #notes { position: fixed; left: 0; right: 0; bottom: 0; max-height: 38vh; overflow: auto; padding: 16px 24px 20px;
+    background: rgba(14, 26, 43, .94); border-top: 3px solid #ff7a2f; font-size: 18px; line-height: 1.5;
+    white-space: pre-wrap; display: none; }
+  #notes.open { display: block; }
+  #hint { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 8px 16px; border-radius: 999px;
+    background: rgba(0, 0, 0, .7); font-size: 14px; white-space: nowrap; transition: opacity .6s; pointer-events: none; }
+  #hint.hidden { opacity: 0; }
+
+  /* Presenter view */
+  .presenter { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; padding: 16px;
+    box-sizing: border-box; background: #111; }
+  .presenter .label { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #8a94a3; margin: 0 0 6px; }
+  .p-left, .p-right { display: flex; flex-direction: column; min-height: 0; min-width: 0; gap: 12px; }
+  .p-current { flex: 1; min-height: 0; background: #000; }
+  .p-next { height: 30vh; background: #000; }
+  .p-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+  .p-meta .count { font-size: 22px; }
+  .p-meta .timer { font-size: 40px; font-weight: 600; color: #ff7a2f; }
+  .p-meta button { font: inherit; font-size: 14px; color: #e8e8e8; background: #2a2f38; border: 1px solid #444; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+  .p-notes { flex: 1; min-height: 0; overflow: auto; font-size: 22px; line-height: 1.5; white-space: pre-wrap; background: #1b1f26; border-radius: 8px; padding: 16px 20px; }
+  .p-end { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8a94a3; font-size: 20px; }
+
+  .message { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .message div { max-width: 640px; line-height: 1.6; font-size: 18px; }
+  .message code { background: #222; padding: 2px 8px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<script>
+(() => {
+  // Outline icons drawn on a 24×24 grid, for the <x-icon name> elements the deck uses.
+  const ICONS = {
+    Book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+    Check: '<path d="M20 6 9 17l-5-5"/>',
+    Code: '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
+    Globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20z"/>',
+    GraduationCap: '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/>',
+    Home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
+    Key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 7 3 3"/><path d="m19 4 2 2"/>',
+    Lightbulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3v1h6v-1c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/>',
+    Lightning: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+    Lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    Search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-5-5"/>',
+    Settings: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+    Users: '<circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><path d="M16 4.1a4 4 0 0 1 0 7.8"/><path d="M22 21v-1a6 6 0 0 0-4-5.6"/>',
+    Verified: '<path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/>',
+    Warning: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    Wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z"/>',
+    _fallback: '<circle cx="12" cy="12" r="9"/>',
+  };
+
+  const isPresenter = new URLSearchParams(location.search).has('presenter');
+  const channel = 'BroadcastChannel' in window ? new BroadcastChannel('beyond-coding-deck') : null;
+  let slides = [];
+  let index = 0;
+  const views = [];   // callbacks that redraw on slide change
+
+  function showMessage(html) {
+    const el = document.createElement('div');
+    el.className = 'message';
+    el.innerHTML = `<div>${html}</div>`;
+    document.body.append(el);
+  }
+
+  // One slide file holds one <section>; its last <aside> is the speaker notes.
+  function parseSlide(id, html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html.trim();
+    const section = tpl.content.querySelector('section');
+    if (!section) throw new Error(`No <section> in slide "${id}"`);
+    const aside = section.querySelector(':scope > aside');
+    const notes = aside ? aside.textContent.trim() : '';
+    if (aside) aside.remove();
+    // Images uploaded to the artifact live at /_blob/<id>; local copies are in assets/.
+    section.querySelectorAll('img[src^="/_blob/"]').forEach(img => {
+      img.setAttribute('src', `assets/${img.getAttribute('src').slice('/_blob/'.length)}.png`);
+    });
+    section.querySelectorAll('x-icon').forEach(el => {
+      const paths = ICONS[el.getAttribute('name')] || ICONS._fallback;
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+    });
+    return { id, section, notes };
+  }
+
+  async function loadDeck() {
+    const res = await fetch('project/deck.json');
+    if (!res.ok) throw new Error('Could not load project/deck.json');
+    const deck = await res.json();
+    document.title = deck.title || document.title;
+    for (const face of Object.values(deck.faces || {})) {
+      if (!face.href) continue;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = face.href;
+      document.head.append(link);
+    }
+    return Promise.all(deck.order.map(async id => {
+      const r = await fetch(`project/slides/${encodeURIComponent(id)}.html`);
+      if (!r.ok) throw new Error(`Could not load slide "${id}"`);
+      return parseSlide(id, await r.text());
+    }));
+  }
+
+  // Renders every slide into a 1920×1080 stage scaled to fit the host element.
+  function mountStage(host) {
+    host.classList.add('stage-host');
+    const stage = document.createElement('div');
+    stage.className = 'stage';
+    const els = slides.map(s => {
+      const el = document.createElement('div');
+      el.className = 'slide';
+      el.append(document.importNode(s.section, true));
+      stage.append(el);
+      return el;
+    });
+    host.append(stage);
+    const fit = () => {
+      const k = Math.min(host.clientWidth / 1920, host.clientHeight / 1080);
+      stage.style.transform = `translate(-50%, -50%) scale(${k})`;
+    };
+    new ResizeObserver(fit).observe(host);
+    fit();
+    return i => els.forEach((el, j) => el.classList.toggle('active', j === i));
+  }
+
+  function go(i, broadcast = true) {
+    index = Math.max(0, Math.min(slides.length - 1, i));
+    views.forEach(draw => draw());
+    history.replaceState(null, '', `${location.pathname}${location.search}#slide-${index + 1}`);
+    if (broadcast && channel) channel.postMessage({ type: 'go', index });
+  }
+
+  function onKey(e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) go(index + 1);
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) go(index - 1);
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(slides.length - 1);
+    else if (k === 'f' || k === 'F') toggleFullscreen();
+    else return;
+    e.preventDefault();
+  }
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+  }
+
+  function buildAudienceView() {
+    const host = document.createElement('div');
+    host.id = 'main';
+    const notes = document.createElement('div');
+    notes.id = 'notes';
+    const hint = document.createElement('div');
+    hint.id = 'hint';
+    hint.textContent = '→ next · ← back · F full screen · N notes · P presenter view · ? help';
+    document.body.append(host, notes, hint);
+
+    const show = mountStage(host);
+    views.push(() => {
+      show(index);
+      notes.textContent = `Slide ${index + 1} of ${slides.length}\n\n${slides[index].notes || '(no notes)'}`;
+    });
+
+    let hintTimer;
+    const flashHint = () => {
+      hint.classList.remove('hidden');
+      clearTimeout(hintTimer);
+      hintTimer = setTimeout(() => hint.classList.add('hidden'), 4000);
+    };
+    flashHint();
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'n' || e.key === 'N') notes.classList.toggle('open');
+      else if (e.key === 'p' || e.key === 'P') {
+        window.open(`${location.pathname}?presenter#slide-${index + 1}`, 'deck-presenter', 'width=1280,height=800');
+      } else if (e.key === '?') flashHint();
+      else return onKey(e);
+    });
+    host.addEventListener('click', () => go(index + 1));
+
+    let idleTimer;
+    document.addEventListener('mousemove', () => {
+      document.body.classList.remove('idle');
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => document.body.classList.add('idle'), 2000);
+    });
+  }
+
+  function buildPresenterView() {
+    document.body.innerHTML = `
+      <div class="presenter">
+        <div class="p-left">
+          <p class="label">Current slide</p>
+          <div class="p-current"></div>
+        </div>
+        <div class="p-right">
+          <div class="p-meta"><span class="count"></span><span class="timer">00:00</span><button type="button">Reset timer</button></div>
+          <p class="label">Next</p>
+          <div class="p-next"></div>
+          <p class="label">Speaker notes</p>
+          <div class="p-notes"></div>
+        </div>
+      </div>`;
+    const $ = sel => document.querySelector(sel);
+    const showCurrent = mountStage($('.p-current'));
+    const nextHost = $('.p-next');
+    const showNext = mountStage(nextHost);
+    const end = document.createElement('div');
+    end.className = 'p-end';
+    end.textContent = 'End of deck';
+    nextHost.append(end);
+
+    views.push(() => {
+      showCurrent(index);
+      showNext(index + 1);  // past the last slide, nothing is active
+      end.style.display = index + 1 < slides.length ? 'none' : 'flex';
+      $('.count').textContent = `Slide ${index + 1} / ${slides.length}`;
+      $('.p-notes').textContent = slides[index].notes || '(no notes)';
+      $('.p-notes').scrollTop = 0;
+    });
+
+    let start = Date.now();
+    const tick = () => {
+      const s = Math.floor((Date.now() - start) / 1000);
+      $('.timer').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    };
+    setInterval(tick, 1000);
+    $('.p-meta button').addEventListener('click', () => { start = Date.now(); tick(); });
+    document.addEventListener('keydown', onKey);
+  }
+
+  async function init() {
+    if (location.protocol === 'file:') {
+      showMessage('This viewer has to be served over HTTP. In this folder, run<br><code>python3 -m http.server 8000</code><br>then open <code>http://localhost:8000</code>.');
+      return;
+    }
+    try {
+      slides = await loadDeck();
+    } catch (err) {
+      showMessage(`Could not load the deck: ${err.message}`);
+      return;
+    }
+    if (isPresenter) buildPresenterView(); else buildAudienceView();
+
+    const m = location.hash.match(/^#slide-(\d+)$/);
+    go(m ? Number(m[1]) - 1 : 0, false);
+
+    if (channel) {
+      channel.onmessage = ({ data }) => {
+        if (data.type === 'go' && data.index !== index) go(data.index, false);
+        else if (data.type === 'hello' && !isPresenter) channel.postMessage({ type: 'go', index });
+      };
+      // A newly opened presenter window asks the audience view where it is.
+      if (isPresenter) channel.postMessage({ type: 'hello' });
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
